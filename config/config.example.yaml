@@ -1,0 +1,73 @@
+# Configuration Example
+# Copy this file to config.yaml and fill in your values
+# NEVER commit config.yaml to version control
+
+# Kalshi API Configuration
+kalshi:
+  api_key: "your-api-key-here"
+  api_secret: "your-api-secret-here"
+  base_url: "https://trading-api.kalshi.com/trade-api/v2"
+  # Use demo environment for testing
+  # base_url: "https://demo-api.kalshi.com/trade-api/v2"
+
+# Database Configuration
+database:
+  path: "data/cbb_prediction.db"
+  echo: false  # Set to true for SQL debugging
+
+# Data Sources
+data_sources:
+  sports_reference:
+    enabled: true
+    rate_limit_seconds: 3  # Respect robots.txt
+  kenpom:
+    enabled: false  # Requires subscription
+    username: ""
+    password: ""
+  barttorvik:
+    enabled: true
+  espn:
+    enabled: true
+
+# Model Configuration
+model:
+  default_model: "xgboost"
+  training_years: 3  # Years of historical data for training
+  validation_split: 0.2
+  random_state: 42
+
+# Betting Configuration
+betting:
+  enabled: false  # Set to true to enable live betting
+  paper_trading: true  # Simulate trades without real money
+  max_bet_fraction: 0.02  # Maximum 2% of bankroll per bet
+  kelly_fraction: 0.25  # Use 25% Kelly criterion
+  min_edge_threshold: 0.05  # Minimum 5% edge to place bet
+  daily_loss_limit: 100.00  # Stop betting after $100 daily loss
+  max_daily_bets: 10
+
+# Dashboard Configuration
+dashboard:
+  host: "127.0.0.1"
+  port: 8050
+  debug: true
+  refresh_interval_seconds: 60
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "logs/app.log"
+  rotation: "10 MB"
+  retention: "30 days"
+
+# Notifications (optional)
+notifications:
+  enabled: false
+  email:
+    smtp_server: ""
+    smtp_port: 587
+    username: ""
+    password: ""
+    recipient: ""
+  slack:
+    webhook_url: ""

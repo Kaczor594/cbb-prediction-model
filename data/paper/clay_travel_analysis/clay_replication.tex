@@ -1,0 +1,235 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{xcolor}
+
+\title{Geospatial Determinants of NCAA Basketball Outcomes:\\A Replication and Critique of Clay et al.\ (2015)}
+\author{CBB Prediction Model Project}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We evaluate the claims of Clay, Bro, \& Clay (2015) regarding the effects of travel distance, timezone crossing, and other geospatial variables on NCAA basketball outcomes. Using a dataset of 16,689 Division I games (2024--2026) with rich team quality controls, we replicate certain findings---travel distance is a meaningful predictor---but fail to replicate the reported east/west timezone asymmetry. We identify several methodological concerns, most critically the inadequate control for team quality (tournament seed only), double-counting of observations, and post-hoc threshold selection. Our XGBoost model ranks travel distance as feature \#8 of 46 by SHAP importance (2.7\% of total), while timezone advantage ranks \#36 (1.0\%). Team quality features account for over 50\% of predictive power.
+\end{abstract}
+
+\section{Clay et al.\ (2015): Summary of Methods and Claims}
+
+Clay et al.\ study $N = 1{,}648$ NCAA Tournament games (3,296 team-game observations) from 1985/86 to 2010/11. They estimate a logistic regression:
+
+\begin{equation}
+\log\!\left(\frac{P(\text{win})}{1 - P(\text{win})}\right) = \beta_0 + \beta_1 \cdot \text{TZ}_{\text{east}} + \beta_2 \cdot \text{TZ}_{\text{west}} + \beta_3 \cdot \Delta\text{elev} + \beta_4 \cdot \Delta\text{temp} + \beta_5 \cdot D_{150} + \beta_6 \cdot \text{seed} + \beta_7 \cdot \text{round} + \beta_8 \cdot \text{pod}
+\label{eq:clay}
+\end{equation}
+
+\noindent where $\text{TZ}_{\text{east/west}}$ count timezone crossings by direction, $D_{150}$ is a binary indicator for traveling $>150$ miles, and seed is the team's tournament ranking (1--16).
+
+\medskip
+\noindent\textbf{Key reported results:}
+\begin{itemize}
+    \item Traveling east: $\hat{\beta}_1 = -0.150$, OR $= 0.861$, $p = 0.019$
+    \item Traveling west: $\hat{\beta}_2 = -0.065$, OR $= 0.937$, $p = 0.257$
+    \item Distance $> 150$ mi: $\hat{\beta}_5 = -0.440$, OR $= 0.644$, $p = 0.004$
+    \item Elevation, temperature, pod era: not significant ($p > 0.25$)
+\end{itemize}
+
+\section{Methodological Concerns}
+
+\subsection{Inadequate Control for Team Quality}
+
+Clay controls for team strength using tournament seed alone---a 16-level ordinal variable. This is insufficient for two reasons.
+
+\textbf{First}, seed is coarse. A 4-seed and an 8-seed can differ enormously in quality (e.g., a mid-major conference champion seeded 8th versus a power-conference at-large 4-seed). Continuous metrics like Barttorvik's $\hat{\theta}_{\text{barthag}}$ or KenPom efficiency provide far more granular quality control.
+
+\textbf{Second}, seed is confounded with geography. Of the 362 D1 programs in our database:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\toprule
+Timezone & Teams & Share \\
+\midrule
+Eastern (UTC$-$5) & 187 & 52\% \\
+Central (UTC$-$6) & 112 & 31\% \\
+Mountain (UTC$-$7) & 24 & 7\% \\
+Pacific (UTC$-$8) & 38 & 10\% \\
+\bottomrule
+\end{tabular}
+\caption{Distribution of D1 programs by timezone.}
+\label{tab:tz_dist}
+\end{table}
+
+The Eastern timezone contains a majority of D1 programs and a disproportionate share of power-conference teams. Teams crossing timezones to travel east are disproportionately Mountain/Pacific teams playing against Eastern/Central opponents. Any residual quality differential not captured by the coarse seed variable will be attributed to the timezone crossing.
+
+We tested this directly in our data. For non-neutral games where the away team crosses timezones:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Direction & Away $\bar{\theta}_{\text{barthag}}$ & Home $\bar{\theta}_{\text{barthag}}$ & $\Delta$(H$-$A) & $N$ \\
+\midrule
+Same TZ & 0.450 & 0.491 & $+$0.041 & 10{,}279 \\
+Away $\rightarrow$ East & 0.520 & 0.566 & $+$0.046 & 2{,}038 \\
+Away $\rightarrow$ West & 0.506 & 0.568 & $+$0.062 & 2{,}404 \\
+\bottomrule
+\end{tabular}
+\caption{Team quality by travel direction. Teams traveling west face a larger quality gap.}
+\label{tab:quality_confound}
+\end{table}
+
+\subsection{Non-Independence of Observations}
+
+Clay uses 3,296 ``team performances'' from 1,648 games. Each game produces two perfectly anti-correlated observations ($Y_{\text{team}_1} = 1 - Y_{\text{team}_2}$). Standard logistic regression assumes independent observations. The effective sample size is $N_{\text{eff}} = 1{,}648$, not 3,296, and standard errors are underestimated by approximately $\sqrt{2}$.
+
+For the timezone-east coefficient ($\hat{\beta}_1 = -0.150$, $\text{SE} = 0.064$), correcting for non-independence yields $\text{SE}_{\text{corrected}} \approx 0.064 \times \sqrt{2} = 0.091$, giving $z = -0.150/0.091 = -1.65$ ($p \approx 0.10$), which would \emph{not} be significant at $\alpha = 0.05$.
+
+\subsection{Post-Hoc Threshold Selection}
+
+The authors state: ``Various distance thresholds were tested for goodness of fit and it was found that the distance effect waned sharply after approximately 150 miles.'' This is a researcher degree-of-freedom problem. Testing thresholds at, say, 50, 100, 150, 200, 250, 300 miles and selecting the best-fitting one inflates the Type I error rate. A continuous distance measure or a pre-registered threshold would be more rigorous.
+
+\subsection{Untested Mechanism}
+
+The circadian rhythm explanation for the east/west asymmetry is plausible but untested. The authors argue that daytime NCAA tournament games favor Eastern teams (whose body-clock peak aligns with afternoon tip-offs), while nighttime NFL/NBA games favor Western teams. However, game time-of-day is not included as a variable, so this mechanism cannot be isolated from other explanations.
+
+\section{Our Replication}
+
+\subsection{Data and Model}
+
+We use 16,689 D1 games from the 2024--2026 seasons (regular season and postseason), with the following travel features:
+
+\begin{align}
+\text{travel\_advantage} &= d(\text{team}_a, \text{venue}) - d(\text{team}_b, \text{venue}) \label{eq:travel} \\
+\text{tz\_advantage} &= |\text{UTC}_a - \text{UTC}_{\text{venue}}| - |\text{UTC}_b - \text{UTC}_{\text{venue}}| \label{eq:tz}
+\end{align}
+
+\noindent where $d(\cdot,\cdot)$ is the haversine (great-circle) distance:
+
+\begin{equation}
+d(\phi_1, \lambda_1, \phi_2, \lambda_2) = 2R \arcsin\!\left(\sqrt{\sin^2\!\left(\frac{\phi_2 - \phi_1}{2}\right) + \cos\phi_1 \cos\phi_2 \sin^2\!\left(\frac{\lambda_2 - \lambda_1}{2}\right)}\right)
+\label{eq:haversine}
+\end{equation}
+
+\noindent with $R = 3{,}958.8$ miles. These features enter an XGBoost model alongside 44 other features capturing team quality (prior-season efficiency, roster BPM, running margins, strength of schedule, etc.).
+
+\subsection{Result 1: Travel Distance Effect}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+Subset & $r_{\text{pb}}$ & $p$ & $N$ \\
+\midrule
+Non-neutral & $-$0.052 & $< 0.001$ & 14{,}721 \\
+Neutral site & $-$0.024 & 0.297 & 1{,}968 \\
+\bottomrule
+\end{tabular}
+\caption{Point-biserial correlation between travel advantage and home win.}
+\label{tab:travel_corr}
+\end{table}
+
+Travel distance is statistically significant for non-neutral games ($r^2 = 0.0027$, explaining 0.27\% of variance) but \textbf{not significant for neutral-site games}---the exact context of Clay's study. The XGBoost model ranks \texttt{travel\_advantage} as feature \#8 of 46 by mean $|\text{SHAP}|$ (2.7\% of total), confirming it is a useful but secondary predictor.
+
+\subsection{Result 2: East/West Timezone Asymmetry}
+
+We do not replicate Clay's finding that traveling east is disproportionately harmful. Our data for non-neutral games:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccrc}
+\toprule
+TZ Crossed & Direction & Away Win \% & $N$ \\
+\midrule
+0 & same & 36.5\% & 10{,}279 \\
+1 & east & 33.8\% & 1{,}738 \\
+1 & west & 33.4\% & 3{,}631 \\
+2 & east & 32.4\% & 207 \\
+2 & west & 28.3\% & 551 \\
+3 & east & 25.8\% & 93 \\
+3 & west & 25.5\% & 247 \\
+\bottomrule
+\end{tabular}
+\caption{Away team win rate by timezone crossing. At 2+ zones, traveling \emph{west} has a lower win rate than east, opposite to Clay's finding.}
+\label{tab:tz_asymmetry}
+\end{table}
+
+Overall cross-timezone: east 33.3\% vs.\ west 31.5\%. The difference is small ($\Delta = 1.8$pp) and in the \emph{opposite} direction from Clay. At 2+ zones, traveling west yields 28.3\% vs.\ 32.4\% for east.
+
+\subsection{Result 3: Quality Confounding Attenuates TZ Effects}
+
+We fit two logistic regressions predicting away wins in non-neutral games ($N = 14{,}721$):
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+& \multicolumn{2}{c}{Model A (TZ only)} & \multicolumn{2}{c}{Model B (TZ + quality)} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+Variable & $\hat{\beta}$ & OR & $\hat{\beta}$ & OR \\
+\midrule
+TZ east & $+$0.238 & 1.269 & $+$0.188 & 1.207 \\
+TZ west & $+$0.182 & 1.199 & $+$0.155 & 1.167 \\
+Quality diff & --- & --- & $-$3.131 & 0.044 \\
+\bottomrule
+\end{tabular}
+\caption{Logistic regression coefficients. Adding continuous team quality reduces TZ coefficients by $\sim$20\%.}
+\label{tab:logistic}
+\end{table}
+
+\noindent Note the coefficient signs: positive $\hat{\beta}$ for TZ east/west means crossing \emph{more} timezones is associated with \emph{higher} away win rates. This is because cross-timezone games in regular-season play tend to involve quality non-conference opponents. Once quality is controlled, both coefficients shrink, and the east/west gap narrows to $\Delta\text{OR} = 0.04$ (1.207 vs.\ 1.167).
+
+\subsection{Result 4: Feature Importance in the Full Model}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{rlcc}
+\toprule
+Rank & Feature & Mean $|\text{SHAP}|$ & \% Total \\
+\midrule
+1 & diff\_run\_avg\_margin & 0.568 & 19.1\% \\
+2 & diff\_roster\_bpm & 0.261 & 8.8\% \\
+3 & diff\_run\_recent\_avg\_margin & 0.179 & 6.0\% \\
+4 & diff\_sos & 0.141 & 4.7\% \\
+\vdots & \vdots & \vdots & \vdots \\
+\textbf{8} & \textbf{travel\_advantage} & \textbf{0.080} & \textbf{2.7\%} \\
+\vdots & \vdots & \vdots & \vdots \\
+\textbf{36} & \textbf{tz\_advantage} & \textbf{0.030} & \textbf{1.0\%} \\
+\bottomrule
+\end{tabular}
+\caption{XGBoost SHAP feature importance. Travel is meaningful but secondary; timezone is near the bottom.}
+\label{tab:shap}
+\end{table}
+
+\section{Summary of Agreements and Disagreements}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{5cm}cc}
+\toprule
+\textbf{Claim} & \textbf{Clay (2015)} & \textbf{Our Data} \\
+\midrule
+Travel distance predicts outcomes & \checkmark (OR = 0.644) & \checkmark ($r = -0.052$, rank \#8/46) \\
+Traveling east hurts more than west & \checkmark ($p = 0.019$) & $\times$ (opposite pattern at 2+ TZ) \\
+Elevation/temperature irrelevant & \checkmark & \checkmark (not in model) \\
+150-mile threshold matters & \checkmark & Partial (continuous effect, no threshold) \\
+Pod era has no independent effect & \checkmark & Not tested (different era) \\
+Quality adequately controlled & Seed only & Seed insufficient; barthag reduces TZ effects $\sim$20\% \\
+\bottomrule
+\end{tabular}
+\caption{Summary comparison of Clay et al.\ findings versus our replication.}
+\label{tab:summary}
+\end{table}
+
+\section{Implications for Model Development}
+
+Our analysis reveals a gap: \texttt{tz\_advantage} is \textbf{identically zero for all 1,968 neutral-site games} in training data, because the feature engineering pipeline only computes timezone shift for non-neutral games (where the venue is the home team's location). This means the model cannot learn timezone effects for tournament predictions, even though \texttt{build\_matchup\_features()} does compute \texttt{tz\_advantage} from \texttt{VENUE\_COORDS} at prediction time.
+
+Fixing this requires geocoding historical game venues and computing the timezone differential for neutral-site games in the training data. Whether this improves predictions depends on whether timezone effects are real and learnable with $\sim$2{,}000 neutral-site training examples.
+
+\end{document}

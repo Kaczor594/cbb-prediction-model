@@ -1,0 +1,259 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{xcolor}
+
+\title{Previous Game Success and Future Outcomes in NCAA Basketball:\\A Replication and Critique of Clay \& Bro (2015)}
+\author{CBB Prediction Model Project}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We evaluate the claims of Clay \& Bro (2015) that previous game success or failure influences subsequent game outcomes in NCAA men's basketball via ``vengeful loser'' and ``overconfident winner'' mechanisms. Using 16,689 Division I games (2024--2026) with continuous team quality controls, we find the \emph{opposite} pattern from that reported by Clay: previous winners are more likely to win their next game, not less. The original finding is attributable to three uncontrolled confounds: (1) regression to the mean in opponent quality, (2) systematic home/away alternation, and (3) residual team strength differences. When team quality (barthag) and venue are controlled, the previous game margin coefficient shrinks by 96.3\% and adds only $+$0.04 percentage points to predictive accuracy.
+\end{abstract}
+
+\section{Clay \& Bro (2015): Summary}
+
+Clay \& Bro study $N = 5{,}048$ game pairs (1,189 aggregated team-year-category observations) from 111 teams in 9 major conferences across three seasons (2001--02, 2010--11, 2011--12). They examine conference regular-season games only, categorizing each team's previous game result into four bins:
+
+\begin{enumerate}
+    \item Major loss: lost by 10+ points
+    \item Minor loss: lost by 1--9 points
+    \item Minor win: won by 1--9 points
+    \item Major win: won by 10+ points
+\end{enumerate}
+
+\noindent They compare each team's subsequent-game winning percentage across these four categories and report the following:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+Previous Result & Next Game Win\% & $N$ \\
+\midrule
+Lost by 10+ & 53.9\% & 294 \\
+Lost by 1--9 & 52.2\% & 303 \\
+Won by 1--9 & 48.1\% & 301 \\
+Won by 10+ & 44.6\% & 291 \\
+\bottomrule
+\end{tabular}
+\caption{Clay \& Bro Table I (abridged). ANOVA: $F = 5.013$, $p < 0.01$, $r = -0.11$.}
+\label{tab:clay_original}
+\end{table}
+
+\noindent Two hypotheses are offered:
+\begin{itemize}
+    \item \textbf{Vengeful loser:} A team that suffers a loss channels the anger and emotion into a superior subsequent performance.
+    \item \textbf{Overconfident winner:} A team that wins big becomes complacent, lacking the emotional drive for the next game.
+\end{itemize}
+
+\noindent The paper also reports that the effect is transmitted diffusely through offensive and defensive efficiency ratings (both $p < 0.01$) rather than through any single performance variable (e.g., rebounds, assists, steals).
+
+\section{Methodological Concerns}
+
+\subsection{Regression to the Mean in Opponent Quality}
+
+The most critical uncontrolled confound is \textbf{opponent quality}. Clay's within-team design controls for a team's own strength by comparing its performance only to itself. However, it does not control for the quality of the opponent in either the previous or the current game.
+
+Consider a team in the Big Ten. If it just lost by 15 points, it very likely played one of the best teams in the conference. Its next game, drawn from the remaining conference schedule, will on average be against a weaker opponent. The ``bounce back'' is not motivation---it is regression to the mean in opponent difficulty.
+
+Formally, let $m_{t,g}$ denote the margin of team $t$ in game $g$, and let $\theta_{\text{opp}(t,g)}$ denote the quality of team $t$'s opponent in game $g$. Clay's hypothesis is:
+
+\begin{equation}
+P(\text{win}_{t,g+1}) = f(m_{t,g}) \quad \text{with} \quad \frac{\partial f}{\partial m} < 0
+\label{eq:clay_hypothesis}
+\end{equation}
+
+\noindent But the actual data-generating process is:
+
+\begin{equation}
+m_{t,g} = h(\theta_t, \theta_{\text{opp}(t,g)}, \text{venue}_g, \varepsilon_g)
+\label{eq:dgp}
+\end{equation}
+
+\noindent and $\theta_{\text{opp}(t,g)}$ is strongly correlated with $m_{t,g}$ (in our data, $r = -0.37$). Without conditioning on opponent quality, the observed association between $m_{t,g}$ and $P(\text{win}_{t,g+1})$ reflects the joint distribution of opponent strengths across consecutive games, not a causal effect of motivation.
+
+\subsection{Home/Away Alternation}
+
+Conference schedules produce roughly alternating home and away games. A team that just lost by 10+ was overwhelmingly playing away from home. If its next game is at home, the observed ``bounce back'' is partly the home court advantage reasserting itself.
+
+\subsection{Residual Team Strength}
+
+The within-team design assumes that aggregating across a season's games eliminates team strength. While the design reduces across-team confounding, it does not eliminate it: stronger teams simply have more observations in the ``Won 10+'' category and fewer in the ``Lost 10+'' category. The category membership is endogenous to team quality.
+
+\subsection{Arbitrary Threshold}
+
+As with Clay et al.\ (2015) on travel distance, the 10-point cutoff is post-hoc: ``we tested other cut-off levels (higher and lower) in our analysis and in all cases the resulting findings and conclusions were nearly identical to those reported here.'' Without pre-registration or correction for multiple comparisons, this remains a researcher degree of freedom.
+
+\section{Our Replication}
+
+\subsection{Data}
+
+We use 16,689 D1 games from the 2024--2026 seasons. For each team in each game, we link to that team's immediately previous game in the same season, yielding 32,295 paired observations. Previous game margin $m_{t,g}$ is categorized into the same four bins as Clay.
+
+Team quality is measured by Barttorvik's $\hat{\theta}_{\text{barthag}}$, a continuous metric on $[0, 1]$ derived from adjusted offensive and defensive efficiency.
+
+\subsection{Result 1: Raw Win\% by Previous Result (Opposite Direction)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+& \multicolumn{2}{c}{Clay \& Bro} & \multicolumn{2}{c}{Our Data} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+Previous Result & Win\% & $N$ & Win\% & $N$ \\
+\midrule
+Lost by 10+ & 53.9\% & 294 & 39.4\% & 8{,}069 \\
+Lost by 1--9 & 52.2\% & 303 & 48.1\% & 7{,}649 \\
+Won by 1--9 & 48.1\% & 301 & 52.3\% & 8{,}097 \\
+Won by 10+ & 44.6\% & 291 & 59.8\% & 8{,}480 \\
+\midrule
+$r$ & \multicolumn{2}{c}{$-0.11$} & \multicolumn{2}{c}{$+0.148$} \\
+\bottomrule
+\end{tabular}
+\caption{Next-game win\% by previous game result. Our data shows the opposite pattern: winners keep winning.}
+\label{tab:raw_comparison}
+\end{table}
+
+\noindent The sign reversal ($r = +0.148$ vs.\ $r = -0.11$) occurs because team quality is the dominant driver: strong teams both win big and win their next game; weak teams lose big and lose again.
+
+\subsection{Result 2: Regression to the Mean Confirmed}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+Previous Result & Prev Opp $\hat{\theta}$ & Curr Opp $\hat{\theta}$ & Own $\hat{\theta}$ \\
+\midrule
+Lost by 10+ & 0.628 & 0.494 & 0.393 \\
+Lost by 1--9 & 0.523 & 0.490 & 0.464 \\
+Won by 1--9 & 0.466 & 0.502 & 0.524 \\
+Won by 10+ & 0.396 & 0.528 & 0.627 \\
+\bottomrule
+\end{tabular}
+\caption{Team quality (barthag) by previous result category. Teams that lost big are weak teams ($\hat{\theta} = 0.393$) who faced strong opponents ($\hat{\theta} = 0.628$).}
+\label{tab:quality_confound}
+\end{table}
+
+\noindent Key correlations with previous game margin:
+\begin{align}
+r(m_{t,g},\; \theta_{\text{opp}(t,g)}) &= -0.368 \quad (p < 0.001) \label{eq:r_prev_opp} \\
+r(m_{t,g},\; \theta_t) &= +0.373 \quad (p < 0.001) \label{eq:r_own} \\
+r(m_{t,g},\; \theta_{\text{opp}(t,g+1)}) &= +0.053 \quad (p < 0.001) \label{eq:r_next_opp}
+\end{align}
+
+\noindent Equation~\eqref{eq:r_prev_opp} confirms that big losses come from facing strong opponents. Equation~\eqref{eq:r_own} confirms that previous margin is strongly confounded with own team quality. Together, these produce the observed pattern without any motivational mechanism.
+
+\subsection{Result 3: Home/Away Is Not Random Across Categories}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+Previous Result & Prev Game Home\% & Curr Game Home\% \\
+\midrule
+Lost by 10+ & 29.0\% & 47.5\% \\
+Lost by 1--9 & 43.9\% & 50.3\% \\
+Won by 1--9 & 56.3\% & 49.8\% \\
+Won by 10+ & 71.3\% & 52.4\% \\
+\bottomrule
+\end{tabular}
+\caption{Home/away distribution by previous result. Teams that lost big were 71\% on the road; teams that won big were 71\% at home. This is far from the ``randomized out'' claim.}
+\label{tab:home_away}
+\end{table}
+
+\noindent The previous game's venue is heavily confounded with the previous margin. Since conference schedules roughly alternate home and away games, a team that lost big on the road is likely to play at home next---producing an apparent ``bounce back'' that is simply the home court advantage.
+
+\subsection{Result 4: Quality Controls Eliminate the Effect}
+
+We estimate three logistic regressions on $N = 32{,}293$ paired observations:
+
+\begin{align}
+\text{Model A:} \quad \text{logit}(P_{\text{win}}) &= \beta_0 + \beta_1 \cdot m_{t,g} \label{eq:model_a} \\
+\text{Model B:} \quad \text{logit}(P_{\text{win}}) &= \beta_0 + \beta_2 \cdot \Delta\theta + \beta_3 \cdot \text{home} \label{eq:model_b} \\
+\text{Model C:} \quad \text{logit}(P_{\text{win}}) &= \beta_0 + \beta_1 \cdot m_{t,g} + \beta_2 \cdot \Delta\theta + \beta_3 \cdot \text{home} \label{eq:model_c}
+\end{align}
+
+\noindent where $\Delta\theta = \hat{\theta}_t - \hat{\theta}_{\text{opp}(t,g+1)}$ and $\text{home} \in \{0,1\}$.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Model & $\hat{\beta}(m_{t,g})$ & $\hat{\beta}(\Delta\theta)$ & $\hat{\beta}(\text{home})$ & Accuracy \\
+\midrule
+A: prev margin only & $+$0.0216 & --- & --- & 56.3\% \\
+B: quality $+$ home & --- & $+$6.162 & $+$0.896 & 74.7\% \\
+C: all three & $+$0.0008 & $+$6.147 & $+$0.898 & 74.7\% \\
+\bottomrule
+\end{tabular}
+\caption{Logistic regression coefficients. Adding quality and home/away reduces the prev margin coefficient by 96.3\%. Model C accuracy exceeds Model B by only $+$0.04pp.}
+\label{tab:logistic}
+\end{table}
+
+\noindent The previous margin coefficient shrinks from $\hat{\beta}_1 = 0.0216$ (Model~A) to $\hat{\beta}_1 = 0.0008$ (Model~C)---a \textbf{96.3\% reduction}. Adding previous margin to a model that already contains quality and venue improves accuracy by $+$0.04 percentage points, which is indistinguishable from zero.
+
+\subsection{Result 5: Within Quality Quartiles, Winners Still Win}
+
+To approximate Clay's within-team design, we stratify by own-team barthag quartile:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Quartile & Lost 10+ & Lost 1--9 & Won 1--9 & Won 10+ \\
+\midrule
+Q1 (weak, $\hat{\theta} < 0.33$) & 26.0\% & 32.4\% & 35.6\% & 36.0\% \\
+Q2 ($0.33$--$0.47$) & 42.2\% & 47.9\% & 47.4\% & 49.4\% \\
+Q3 ($0.47$--$0.63$) & 50.4\% & 55.8\% & 58.6\% & 60.1\% \\
+Q4 (strong, $\hat{\theta} > 0.63$) & 60.8\% & 62.2\% & 63.7\% & 70.7\% \\
+\bottomrule
+\end{tabular}
+\caption{Next-game win\% stratified by own team quality. Within every quartile, the monotonic pattern runs in the \emph{same} direction: previous winners win more often, not less.}
+\label{tab:stratified}
+\end{table}
+
+\noindent Within every quality quartile, the direction is the same: teams that previously won big have a higher win rate than teams that previously lost big. The ``vengeful loser'' pattern does not appear in any quality band. The within-quartile effect sizes (e.g., 9.9pp for Q4) are much smaller than the across-quartile effects (34.8pp between Q1 and Q4 for the ``Lost 10+'' category), confirming that team quality is the dominant factor.
+
+\section{Why Clay's Results Differ}
+
+Clay's conference-only, within-team aggregation design partially nets out team quality: by computing each team's win\% across its own games in each category, the design removes the mean quality difference. This is methodologically thoughtful. However, three residual confounds survive:
+
+\begin{enumerate}
+    \item \textbf{Opponent quality within conference:} Even within a conference, schedule sequence creates opponent-quality variation that is correlated with previous margin. A team coming off a loss to the conference leader faces a different expected opponent than a team coming off a blowout of the last-place team.
+    \item \textbf{Home/away alternation:} The 29\%/71\% home split in previous games across the ``Lost 10+'' and ``Won 10+'' categories means that the next game's venue is systematically different, inflating apparent bounce-back rates.
+    \item \textbf{Aggregation bias:} Collapsing to the year-team-category level (1,189 observations) masks game-level confounds visible in the raw data.
+\end{enumerate}
+
+\noindent We emphasize that Clay's design was reasonable for its time and represents a genuine attempt to control for team quality. The issue is that partial control can produce misleading results when the remaining confounds are systematic.
+
+\section{Summary}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{5.5cm}cc}
+\toprule
+\textbf{Claim} & \textbf{Clay (2015)} & \textbf{Our Data} \\
+\midrule
+Previous loss $\rightarrow$ higher next-game win\% & \checkmark & $\times$ (opposite) \\
+Previous win $\rightarrow$ lower next-game win\% & \checkmark & $\times$ (opposite) \\
+Effect is monotonic across categories & \checkmark & \checkmark (same direction) \\
+Effect survives quality controls & Not tested & $\times$ (96.3\% shrinkage) \\
+Home/away is random across categories & Claimed & $\times$ (29\% vs 71\%) \\
+Effect channeled through OFF/DEF efficiency & \checkmark ($p < 0.01$) & Not tested \\
+\bottomrule
+\end{tabular}
+\caption{Summary comparison.}
+\label{tab:summary}
+\end{table}
+
+\noindent The ``vengeful loser'' and ``overconfident winner'' hypotheses are intuitively appealing and well-grounded in sports psychology. However, the observed effect reported by Clay \& Bro (2015) is almost entirely attributable to three uncontrolled confounds: regression to the mean in opponent quality, home/away alternation within conference schedules, and residual team strength differences. When these are properly controlled, previous game margin contributes effectively zero predictive power for subsequent game outcomes.
+
+\end{document}

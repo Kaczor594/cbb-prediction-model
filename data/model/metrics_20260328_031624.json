@@ -1,0 +1,16 @@
+{
+  "accuracy": 0.7554842161583735,
+  "brier_score": 0.15905985236167908,
+  "log_loss": 0.47532004331488653,
+  "auc": 0.8320845493089588,
+  "home_win_rate_actual": 0.6375958623149635,
+  "home_win_rate_predicted": "0.65367687",
+  "n_train": 11074,
+  "n_test": 5607,
+  "best_iteration": 77,
+  "train_seasons": [
+    "2024",
+    "2025"
+  ],
+  "test_season": "2026"
+}

@@ -1,0 +1,55 @@
+# Core Data Science
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+lightgbm>=4.0.0
+optuna>=3.4.0  # Hyperparameter optimization
+
+# Data Collection & Web Scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+selenium>=4.15.0  # For dynamic content
+httpx>=0.25.0  # Async HTTP client
+
+# Database
+sqlalchemy>=2.0.0
+
+# Dashboard & Visualization
+plotly>=5.18.0
+dash>=2.14.0
+dash-bootstrap-components>=1.5.0
+
+# API Integration
+pydantic>=2.5.0  # Data validation
+python-dotenv>=1.0.0  # Environment variable management
+
+# Jupyter & Development
+jupyter>=1.0.0
+ipykernel>=6.27.0
+notebook>=7.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+
+# Utilities
+tqdm>=4.66.0  # Progress bars
+python-dateutil>=2.8.0
+pytz>=2023.3
+
+# Logging
+loguru>=0.7.0
+
+# Type checking (optional)
+mypy>=1.7.0
+types-requests>=2.31.0
+
+# Code Quality (optional)
+black>=23.11.0
+ruff>=0.1.6
